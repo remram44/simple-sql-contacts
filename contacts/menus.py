@@ -12,6 +12,8 @@ class Option(object):
             self._callback = callback
         elif value:
             self._callback = lambda: value
+        else:
+            self._callback = lambda: None
 
     def __call__(self):
         return self._callback()
