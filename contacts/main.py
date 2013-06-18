@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -11,7 +13,32 @@ Session = sessionmaker(bind=engine)
 
 
 def new_user():
-    pass
+    print "Creating a new person"
+    name = raw_input("  Name: ")
+    if not name:
+        print "Invalid name, aborting"
+        return
+    dob = raw_input("  Date of birth (YYYY/MM/DD): ")
+    try:
+        dob = datetime.datetime.strptime(dob, '%Y/%m/%d')
+    except ValueError:
+        dob = None
+    if not dob:
+        print "Invalid date, aborting"
+        return
+
+    session = Session()
+    try:
+        person = models.Person(name=name, dateofbirth=dob)
+        session.add(person)
+        session.commit()
+    except Exception, e:
+        session.rollback()
+        print "Insertion failed (%s: %s)" % (e.__class__.__name__, e)
+    else:
+        print "Person created"
+    finally:
+        session.close()
 
 
 def search_user():
@@ -19,13 +46,23 @@ def search_user():
 
 
 menu = Menu([
-        Option("Create a new user", callback=new_user),
-        Option("Search a user by name", callback=search_user),
+        Option("Create a new person", callback=new_user),
+        Option("Search a person by name", callback=search_user),
         Option("Exit", value='exit'),
     ])
 
 
 def main():
+    if not engine.dialect.has_table(engine.connect(), 'person'):
+        while True:
+            a = raw_input("The tables don't seem to exist. Create them? "
+                          "(y/n) ")
+            if a == 'y':
+                models.Base.metadata.create_all(bind=engine)
+                break
+            elif a == 'n':
+                return
+
     ret = None
     while ret != 'exit':
         ret = menu.select()
