@@ -12,6 +12,10 @@ engine = create_engine('sqlite:///database.sqlite3', echo=True)
 Session = sessionmaker(bind=engine)
 
 
+def edit_user(person):
+    pass
+
+
 def new_user():
     print "Creating a new person"
     name = raw_input("  Name: ")
@@ -42,7 +46,25 @@ def new_user():
 
 
 def search_user():
-    pass
+    print "Searching for an existing person"
+    name = raw_input("  Name pattern: ")
+    if not name:
+        print "Invalid name, aborting"
+
+    session = Session()
+    results = (
+            session.query(models.Person)
+                    .filter(models.Person.name.like(name))
+                    .all())
+
+    menu = Menu(
+            [Option("%s" % p.name, value=i)
+             for i, p in enumerate(results)] +
+            [Option("Abort", value='exit')])
+    choice = menu.select()
+    if choice == 'exit':
+        return
+    edit_user(results[choice])
 
 
 menu = Menu([
